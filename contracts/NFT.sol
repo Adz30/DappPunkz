@@ -5,7 +5,6 @@ import "./ERC721Enumerable.sol";
 import "./Ownable.sol";
 
 contract NFT is ERC721Enumerable, Ownable {
-
     using Strings for uint256;
 
     string public baseURI;
@@ -13,9 +12,8 @@ contract NFT is ERC721Enumerable, Ownable {
     uint256 public cost;
     uint256 public maxSupply;
     uint256 public allowMintingOn;
-   
 
-    event Mint(uint256 amount, address minter );
+    event Mint(uint256 amount, address minter);
     event Withdraw(uint256 amount, address owner);
     constructor(
         string memory _name,
@@ -29,44 +27,40 @@ contract NFT is ERC721Enumerable, Ownable {
         maxSupply = _maxSupply;
         allowMintingOn = _allowMintingOn;
         baseURI = _baseURI;
-
     }
 
     function mint(uint256 _mintAmount) public payable {
-
-        require(block.timestamp >= allowMintingOn);
+        require(block.timestamp >= allowMintingOn, "Minting not allowed yet.");
 
         require(_mintAmount > 0);
-        
-        require(msg.value >= cost * _mintAmount );
 
-        uint supply = totalSupply();
+        require(msg.value >= cost * _mintAmount, "Insufficient funds to mint.");
 
-        require(supply + _mintAmount <= maxSupply );
+        uint256 supply = totalSupply();
 
-        for(uint256 i = 1; i <= _mintAmount; i++){
-        _safeMint(msg.sender, supply +i);
+        require(supply + _mintAmount <= maxSupply, "Exceeds maximum supply.");
+
+        for (uint256 i = 1; i <= _mintAmount; i++) {
+            _safeMint(msg.sender, supply + i);
         }
 
         emit Mint(_mintAmount, msg.sender);
-
-
     }
-    function tokenURI(uint256 _tokenId)
-    public
-    view
-    virtual
-    override
-    returns(string memory)
-    {
-        require(_exists(_tokenId), 'token does not exist');
-        return(string(abi.encodePacked(baseURI, _tokenId.toString(), baseExtension)));
+    function tokenURI(
+        uint256 _tokenId
+    ) public view virtual override returns (string memory) {
+        require(_exists(_tokenId), "token does not exist");
+        return (
+            string(
+                abi.encodePacked(baseURI, _tokenId.toString(), baseExtension)
+            )
+        );
     }
 
-    function walletOfOwner(address _owner) public view returns(uint[]memory) {
+    function walletOfOwner(address _owner) public view returns (uint[] memory) {
         uint256 ownerTokenCount = balanceOf(_owner);
         uint256[] memory tokenIds = new uint256[](ownerTokenCount);
-        for(uint256 i; i < ownerTokenCount; i++) {
+        for (uint256 i; i < ownerTokenCount; i++) {
             tokenIds[i] = tokenOfOwnerByIndex(_owner, i);
         }
         return tokenIds;
@@ -75,17 +69,13 @@ contract NFT is ERC721Enumerable, Ownable {
     function withdraw() public onlyOwner {
         uint256 balance = address(this).balance;
 
-        (bool success, ) = payable(msg.sender).call{value: balance} ("");
+        (bool success, ) = payable(msg.sender).call{value: balance}("");
         require(success);
 
         emit Withdraw(balance, msg.sender);
-
     }
 
-    function setCost(uint256 _newCost) public onlyOwner{
+    function setCost(uint256 _newCost) public onlyOwner {
         cost = _newCost;
     }
-    
-
-
 }
